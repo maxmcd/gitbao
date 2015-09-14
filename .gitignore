@@ -1,0 +1,7 @@
+*forBuild*
+.DS_Store
+userapp/userapp
+lambda-relay/lambda-relay
+gitbao
+node_modules
+tmp
