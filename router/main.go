@@ -55,7 +55,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	name := "forBuild451574672"
+	name := "forBuild410480062"
 
 	err, payload := InvoteLambda(name, reqeust)
 	if err != nil {
@@ -68,15 +68,17 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		log.Fatal(err)
 	}
 
-	w.WriteHeader(response.StatusCode)
 	for key, value := range response.Headers {
-		w.Header().Set(key, value)
+		w.Header().Del(key)
+		w.Header().Add(key, value)
 	}
+	fmt.Printf("%#v\n", w.Header())
 	fmt.Println(response)
 	data, err := base64.StdEncoding.DecodeString(response.Body)
 	if err != nil {
 		log.Fatal(err)
 	}
+	w.WriteHeader(response.StatusCode)
 	w.Write(data)
 }
 

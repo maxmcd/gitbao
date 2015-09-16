@@ -1,0 +1,62 @@
+{{template "header"}}
+<div class="container landing">
+    <div class="row">
+        <div class="columns eight offset-by-two">
+            <div class="center">
+                <img src="https://gitbao.com/bao.jpg">
+                <h2>gitbao</h2>
+            </div>
+            <p>
+                Welcome to gitbao. Gitbao allows you to easily deploy an application from a github gist.
+            </p>
+            <h5>
+                Take some code:
+            </h5>
+            <pre><code>package main
+
+import "net/http"
+
+func main() {
+    http.HandleFunc("/",
+        func(w http.ResponseWriter, req *http.Request) {
+            w.Write([]byte("Gitbao is awesome"))
+        })
+    http.ListenAndServe(":8080", nil)
+}</code></pre>
+            <h5>
+                Create a <a href="https://gist.github.com">github gist</a> for it:
+                <br> 
+            </h5>
+            <p>
+                <a href="https://gist.github.com/maxmcd/f430e80ab3246b2ae6d9" target="blank">
+                    https://gist.github.com/maxmcd/f430e80ab3246b2ae6d9
+                </a>
+                
+            </p>
+            <h5>
+                Change the url:
+            </h5>
+            <p>
+                https://gist.git<b>bao</b>.com/maxmcd/f430e80ab3246b2ae6d9
+            </p>
+            <p>
+                That's it.
+                <br />
+                <br />
+                <br />
+            </p>
+            <p>
+                Gitbao is currently very limited. It only works with Go applications, and running applications can be killed at any time. 
+                <br>
+                Other language support is on the way, along with better application control, auto-updates, logins, etc...
+            </p>
+            <p>
+                <a href="https://github.com/gitbao/gitbao">Source</a>
+                <br>
+                Made at <a href="http://hackerschool.com">Hacker School</a> 
+            </p>
+            <br><br>
+        </div>
+    </div>
+</div>
+{{template "footer"}}

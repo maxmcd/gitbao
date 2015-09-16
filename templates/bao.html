@@ -1,0 +1,34 @@
+{{template "header"}}
+    <div class="container">
+        <div class="row">
+            <div class="columns twelve">
+                <br>
+                <h5 class="title">New bao</h5>
+                <hr>
+                <div class="row">
+                    <div class="columns six">
+                        <pre class="console">{{.Console}}</pre>
+
+                    </div>
+                    <div class="columns six">
+                        <button href="/deploy/{{.Id}}/" class="button ajax deploy button-primary" disabled>deploy</button>
+
+                        <textarea class="config">
+                            # This is your bao config file, define 
+                            # a port and any env variables 
+                            PORT 8000 
+                            THIS=that
+                        </textarea>
+
+                    </div>
+                </div>
+            </div>
+        </div>        
+    </div>
+    <script type="text/javascript">
+        poll = function() {
+            longpoll("/poll/{{.Id}}/", writeToBody)
+        }
+        poll()
+    </script>
+{{template "footer"}}

@@ -36,3 +36,4 @@ https://gist.github.com/maxmcd/f430e80ab3246b2ae6d9
 - http://blog.0x82.com/2014/11/24/aws-lambda-functions-in-go/
 - https://gist.github.com/miksago/d1c456d4e235e025791d
 - http://stackoverflow.com/questions/28718887/node-js-http-request-how-to-detect-response-body-encoding
+- https://github.com/visionmedia/deploy

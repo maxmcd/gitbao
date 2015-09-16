@@ -11,14 +11,11 @@ exports.handler = function(event, context) {
     });
 
     proc.on('error', function(code) {
-        console.log(code)
+        console.log("proc, err: ", code)
     })
 
     proc.on('close', function(code) {
-        if (code !== 0) {
-            return context.done(new Error("Process exited with non-zero status code"));
-        }
-        context.done(null);
+        console.log("Process exited with non-zero status code: " + code)
     });
 
     var method = event.Method
@@ -42,9 +39,9 @@ exports.handler = function(event, context) {
             res.on("end", function() {
                 var buffer = Buffer.concat(chunks);
                 response = {
-                    "Body":buffer.toString('base64'),
-                    "StatusCode":res.statusCode,
-                    "Headers":res.headers
+                    "Body": buffer.toString('base64'),
+                    "StatusCode": res.statusCode,
+                    "Headers": res.headers
                 }
                 context.succeed(response)
             });
@@ -53,7 +50,7 @@ exports.handler = function(event, context) {
         req.end();
 
         req.on('error', function(e) {
-            console.log(e)
+            console.log("Req, err: ", e)
             setTimeout(function() {
                 tryUntilSuccess(options, callback);
             }, 1000)

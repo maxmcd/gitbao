@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"text/template"
 
 	"github.com/gorilla/mux"
 
@@ -11,11 +12,19 @@ import (
 	"github.com/maxmcd/gitbao/logger"
 )
 
+var T *template.Template
+
+func init() {
+	T = template.Must(template.ParseGlob("templates/*"))
+}
+
 func main() {
 	r := mux.NewRouter()
 	r.StrictSlash(true)
+	r.HandleFunc("/", IndexHandler).Methods("GET")
 	r.HandleFunc("/{username}/{gist-id}", CreateHandler).Methods("GET")
 	//.Host("{subdomain:gist}.{host:.*}")
+	r.PathPrefix("/").Handler(http.FileServer(http.Dir("public/")))
 	http.Handle("/", Middleware(r))
 	fmt.Println("Broadcasting Kitchen on port 8000")
 	http.ListenAndServe(":8000", nil)
@@ -26,6 +35,14 @@ func Middleware(h http.Handler) http.Handler {
 		log.Println(r.Host, r.URL)
 		h.ServeHTTP(w, r)
 	})
+}
+
+func RenderTemplate(w http.ResponseWriter, tmpl string, data interface{}) {
+	T.ExecuteTemplate(w, tmpl+".html", data)
+}
+
+func IndexHandler(w http.ResponseWriter, req *http.Request) {
+	RenderTemplate(w, "index", nil)
 }
 
 func CreateHandler(w http.ResponseWriter, req *http.Request) {

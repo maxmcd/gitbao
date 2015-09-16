@@ -1,0 +1,72 @@
+body {
+    color: #666;
+    font-weight: 300;
+}
+a {
+    color: #666;
+}
+a:hover {
+    color: #333;
+}
+.center {
+    text-align: center;
+}
+.hide {
+    display: none;
+}
+.nav {
+    height: 50px;
+    border-bottom: 1px solid #ccc;
+}
+.nav li.logo {
+    font-size: 20px;
+}
+.nav li {
+    list-style-type: none;
+    padding: 11px;
+    font-size: 16px;
+    display: inline-block;
+}
+.nav li a {
+    text-decoration: none;
+}
+.landing img {
+    padding-top: 20px;
+}
+.landing {
+    font-size: 17px;
+}
+pre.console {
+    font-size: 14px;
+    border-radius: 4px;
+    background-color: #333;
+    color: white;
+    padding: 5px;
+    min-height: 250px;
+    overflow-x: scroll;
+    margin: 0px 0px 10px 0px;
+}
+hr {
+    margin: 0px 0 15px 0;
+}
+h5 {
+    margin-bottom: 5px;
+}
+.config {
+    font-size: 15px;
+    white-space: nowrap;
+    background: #F1F1F1;
+    font-size: 16px;
+    border: 1px solid #E1E1E1;
+    border-radius: 4px;
+    font-family: monospace;
+    width: 100%;
+    min-height: 210px;
+    height: auto;
+}
+button:disabled {
+    opacity: 0.4;
+}
+.config:focus {
+    border: 1px solid #E1E1E1;
+}
