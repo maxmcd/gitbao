@@ -1,34 +1,49 @@
 {{template "header"}}
-    <div class="container">
-        <div class="row">
-            <div class="columns twelve">
-                <br>
-                <h5 class="title">New bao</h5>
-                <hr>
-                <div class="row">
-                    <div class="columns six">
-                        <pre class="console">{{.Console}}</pre>
-
-                    </div>
-                    <div class="columns six">
-                        <button href="/deploy/{{.Id}}/" class="button ajax deploy button-primary" disabled>deploy</button>
-
-                        <textarea class="config">
+<div class="container">
+    <div class="row">
+        <div class="columns twelve">
+            <br>
+            <h5 class="title">
+                    <a href="https://gist.github.com/{{.Owner.Login}}">
+                        {{.Owner.Login}}</a>
+                     / 
+                    <a href="{{.HTMLURL}}">
+                        {{.Description}}
+                    </a>
+                </h5>
+            <hr>
+            <div class="row">
+                <div class="columns six">
+                    <iFrame src="" name="console" frameborder="0" class="console"></iFrame>
+                    <b>Url:</b> <a href="{{.HTMLURL}}">{{.HTMLURL}}</a>
+                    <br>
+                    <b>Owner:</b> {{.Owner.Login}}
+                    <br>
+                    <b>Files:</b>
+                    <ul>
+                        {{range $index, $element := .Files}}
+                        <li>
+                            {{$index}}
+                        </li>
+                        {{end}}
+                    </ul>
+                </div>
+                <div class="columns six">
+                    <form target="console" action="/build/{{.ID}}" method="post" class="deploy">
+                        <input class="button-primary" type="submit" value="Deploy">
+                        <p>
+                            Set a port in the bao config file that your application will broadcast on.
+                        </p>
+                        <textarea name="config" class="config">
                             # This is your bao config file, define 
                             # a port and any env variables 
-                            PORT 8000 
+                            PORT 8080 
                             THIS=that
                         </textarea>
-
-                    </div>
+                    </form>
                 </div>
             </div>
-        </div>        
+        </div>
     </div>
-    <script type="text/javascript">
-        poll = function() {
-            longpoll("/poll/{{.Id}}/", writeToBody)
-        }
-        poll()
-    </script>
+</div>
 {{template "footer"}}

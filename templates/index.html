@@ -3,58 +3,67 @@
     <div class="row">
         <div class="columns eight offset-by-two">
             <div class="center">
-                <img src="https://gitbao.com/bao.jpg">
+                <img src="/bao.jpg">
                 <h2>gitbao</h2>
             </div>
             <p>
-                Welcome to gitbao. Gitbao allows you to easily deploy an application from a github gist.
+                Welcome to gitbao. Gitbao is an experimental
+                new way to deploy small web services. 
             </p>
-            <h5>
+            <b>
                 Take some code:
-            </h5>
-            <pre><code>package main
-
-import "net/http"
-
-func main() {
-    http.HandleFunc("/",
-        func(w http.ResponseWriter, req *http.Request) {
-            w.Write([]byte("Gitbao is awesome"))
-        })
-    http.ListenAndServe(":8080", nil)
-}</code></pre>
-            <h5>
-                Create a <a href="https://gist.github.com">github gist</a> for it:
-                <br> 
-            </h5>
+            </b>
             <p>
                 <a href="https://gist.github.com/maxmcd/f430e80ab3246b2ae6d9" target="blank">
                     https://gist.github.com/maxmcd/f430e80ab3246b2ae6d9
                 </a>
-                
             </p>
-            <h5>
+            <b>
                 Change the url:
-            </h5>
+            </b>
             <p>
-                https://gist.git<b>bao</b>.com/maxmcd/f430e80ab3246b2ae6d9
+                <a href="https://gist.gitbao.com/maxmcd/f430e80ab3246b2ae6d9">
+                    https://gist.git<b>bao</b>.com/maxmcd/f430e80ab3246b2ae6d9
+                </a>
             </p>
             <p>
-                That's it.
-                <br />
-                <br />
-                <br />
+                Your application will be built, deployed, and you'll be 
+                provided a url to access your application. 
             </p>
+            <br>
+            <br>
             <p>
-                Gitbao is currently very limited. It only works with Go applications, and running applications can be killed at any time. 
-                <br>
-                Other language support is on the way, along with better application control, auto-updates, logins, etc...
+                <b>The Details:</b>
             </p>
-            <p>
-                <a href="https://github.com/gitbao/gitbao">Source</a>
-                <br>
-                Made at <a href="http://hackerschool.com">Hacker School</a> 
-            </p>
+            <ol>
+                <li>
+                    Gitbao is slow. Gitbao hosts applications on 
+                    <a href="https://aws.amazon.com/lambda/">
+                        AWS Lambda
+                    </a>. 
+                    This means it's very cheap but there is 
+                    sometimes a 300ms+ additional delay for every
+                    requst. It's not meant to replace your whole web
+                    stack, but it could be very useful for small dynamic
+                    services that can afford to be a little sluggish. 
+                </li>
+                <li>
+                    Gitbao only supports Go. We're hoping to add more
+                    language support in the future.
+                </li>
+                <li>
+                    Gitbao is free, for now. It's very cheap to run, 
+                    when that changes we'll likely change to a "charge
+                     for use" model.
+                </li>
+                <li>
+                    Gitbao is very experimental
+                </li>
+                <li>
+                    More questions? Gitbao was created by <a href="mailto:m@xmcd.me">Max</a>,
+                    feel free to contact him. 
+                </li>
+            </ol>
             <br><br>
         </div>
     </div>

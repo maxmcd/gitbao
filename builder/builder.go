@@ -10,9 +10,11 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"text/template"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/lambda"
+	"github.com/maxmcd/gitbao/config"
 	"github.com/maxmcd/gitbao/logger"
 )
 
@@ -25,10 +27,15 @@ func init() {
 	}
 }
 
-func Build(gistId string, l logger.Log) (err error, name string) {
+func Build(gistId, cfg string, l logger.Log) (err error, name string) {
+
+	configStruct, err := config.Parse(cfg)
+	if err != nil {
+		l.Write(err.Error())
+	}
 
 	l.Write("Fetching gist data")
-	gist, err := FetchGistData(gistId, l)
+	gist, err := FetchGistData(gistId)
 	if err != nil {
 		return
 	}
@@ -51,16 +58,16 @@ func Build(gistId string, l logger.Log) (err error, name string) {
 	l.Write("Build successful")
 
 	l.Write("Zipping contents")
-	err = CreateZip(gist, directory)
+	err = CreateZip(gist, configStruct, directory)
 	if err != nil {
 		return
 	}
 
-	l.Write("Uploading packaged contents")
-	err = CreateLambda(directory)
-	if err != nil {
-		return
-	}
+	// l.Write("Uploading packaged contents")
+	// err = CreateLambda(directory)
+	// if err != nil {
+	// 	return
+	// }
 	return
 }
 
@@ -126,7 +133,7 @@ func CreateLambda(directory string) error {
 // 	return nil
 // }
 
-func CreateZip(gist GithubGist, directory string) error {
+func CreateZip(gist GithubGist, cfg config.Config, directory string) error {
 
 	buf := new(bytes.Buffer)
 	// Create a new zip archive.
@@ -142,7 +149,7 @@ func CreateZip(gist GithubGist, directory string) error {
 	// 	return err
 	// }
 
-	err = addFileToZip(w, "lambda/handler_example.js", "")
+	err = addHandlerToZip(w, cfg)
 	if err != nil {
 		return err
 	}
@@ -161,6 +168,38 @@ func CreateZip(gist GithubGist, directory string) error {
 		return err
 	}
 
+	return nil
+}
+
+func addHandlerToZip(w *zip.Writer, cfg config.Config) error {
+	path := "lambda/handler_example.js"
+	f, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	info, err := f.Stat()
+	if err != nil {
+		return err
+	}
+	header, err := zip.FileInfoHeader(info)
+	if err != nil {
+		return err
+	}
+	wr, err := w.CreateHeader(header)
+	if err != nil {
+		return err
+	}
+	fileBytes, err := ioutil.ReadFile(path)
+	if err != nil {
+		return err
+	}
+
+	handlerTemplate := string(fileBytes)
+	t := template.Must(template.New("handler").Parse(handlerTemplate))
+	err = t.Execute(wr, cfg)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -226,7 +265,7 @@ func GoBuild(gist GithubGist, directory string, l logger.Log) error {
 	return nil
 }
 
-func FetchGistData(gistId string, l logger.Log) (gist GithubGist, err error) {
+func FetchGistData(gistId string) (gist GithubGist, err error) {
 	client := &http.Client{}
 	req, err := http.NewRequest(
 		"GET",
@@ -247,10 +286,12 @@ func FetchGistData(gistId string, l logger.Log) (gist GithubGist, err error) {
 
 	contents, err := ioutil.ReadAll(resp.Body)
 	if resp.StatusCode != 200 {
-		l.Write("Error fetching gist data")
-		if resp.StatusCode == 404 {
-			l.Write("404 gist not found")
-		}
+		err = fmt.Errorf("Error fetching gist data")
+		return
+	}
+	if resp.StatusCode == 404 {
+		err = fmt.Errorf("404 gist not found")
+		return
 	}
 	if err != nil {
 		return
@@ -265,7 +306,7 @@ func FetchGistData(gistId string, l logger.Log) (gist GithubGist, err error) {
 
 func DownloadFromRepo(gitPullUrl string) (directory string, err error) {
 	path := "."
-	directory, err = ioutil.TempDir(path, "forBuild")
+	directory, err = ioutil.TempDir(path, "bao")
 	if err != nil {
 		return
 	}

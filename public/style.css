@@ -2,6 +2,9 @@ body {
     color: #666;
     font-weight: 300;
 }
+form {
+    margin-bottom: 0px;
+}
 a {
     color: #666;
 }
@@ -36,10 +39,19 @@ a:hover {
 .landing {
     font-size: 17px;
 }
+
+iframe.console {
+    background-color: #333;  
+    min-height: 250px;
+    display: block;
+    border-radius: 4px;
+    width: 100%;
+    display: none;
+}
+
 pre.console {
     font-size: 14px;
     border-radius: 4px;
-    background-color: #333;
     color: white;
     padding: 5px;
     min-height: 250px;

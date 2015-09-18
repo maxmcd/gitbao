@@ -15,14 +15,19 @@ import (
 var T *template.Template
 
 func init() {
-	T = template.Must(template.ParseGlob("templates/*"))
+	t, err := template.ParseGlob("templates/*")
+	if err != nil {
+		log.Fatal(err)
+	}
+	T = template.Must(t, err)
 }
 
 func main() {
 	r := mux.NewRouter()
 	r.StrictSlash(true)
 	r.HandleFunc("/", IndexHandler).Methods("GET")
-	r.HandleFunc("/{username}/{gist-id}", CreateHandler).Methods("GET")
+	r.HandleFunc("/{username}/{gist-id}", GistHandler).Methods("GET")
+	r.HandleFunc("/build/{gist-id}", BuildHandler).Methods("POST")
 	//.Host("{subdomain:gist}.{host:.*}")
 	r.PathPrefix("/").Handler(http.FileServer(http.Dir("public/")))
 	http.Handle("/", Middleware(r))
@@ -45,7 +50,7 @@ func IndexHandler(w http.ResponseWriter, req *http.Request) {
 	RenderTemplate(w, "index", nil)
 }
 
-func CreateHandler(w http.ResponseWriter, req *http.Request) {
+func GistHandler(w http.ResponseWriter, req *http.Request) {
 
 	vars := mux.Vars(req)
 
@@ -58,12 +63,35 @@ func CreateHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	gist, err := builder.FetchGistData(gistId)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+	}
+
+	RenderTemplate(w, "bao", gist)
+}
+
+func BuildHandler(w http.ResponseWriter, req *http.Request) {
+
+	vars := mux.Vars(req)
+
+	gistId := vars["gist-id"]
+
+	if gistId == "" {
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte("404"))
+		return
+	}
+
+	cfg := req.FormValue("config")
+
 	wlog := logger.CreateLog(w)
-	wlog.Write("New bao: %s %s", gistId, username)
+	wlog.Write("New bao: %s", gistId)
 
 	w.Header().Set("Content-type", "text/html")
 
-	err, name := builder.Build(gistId, wlog)
+	err, name := builder.Build(gistId, cfg, wlog)
 	if err != nil {
 		wlog.Write(err.Error())
 	}

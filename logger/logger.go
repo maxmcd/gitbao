@@ -27,6 +27,8 @@ func CreateLog(w http.ResponseWriter) Log {
         body {
             font-family: monospace;
             padding: 10px;
+            color: white;
+            background-color: #333;
         }
     </style>
     `)

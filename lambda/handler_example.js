@@ -2,6 +2,11 @@ var child_process = require('child_process');
 var http = require('http')
 
 exports.handler = function(event, context) {
+
+    {{range $key, $value := .EnvVar}}
+    process.env['{{$key}}'] = '{{$value}}';
+    {{end}}
+
     var proc = child_process.spawn('./userapp', [], {
         stdio: 'inherit'
     });
@@ -24,7 +29,7 @@ exports.handler = function(event, context) {
     var path = event.Path
     var options = {
         host: 'localhost',
-        port: "8081",
+        port: "{{.Port}}",
         path: path,
         headers: headers,
         method: method
