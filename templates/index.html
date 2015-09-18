@@ -2,9 +2,12 @@
 <div class="container landing">
     <div class="row">
         <div class="columns eight offset-by-two">
-            <div class="center">
+            <div class="center landing-head">
                 <img src="/bao.jpg">
                 <h2>gitbao</h2>
+                <blockquote>
+                    Wrapping up your github gists into delicious cloud-shaped bao buns.
+                </blockquote>
             </div>
             <p>
                 Welcome to gitbao. Gitbao is an experimental
@@ -37,15 +40,17 @@
             </p>
             <ol>
                 <li>
+                    Gitbao is <b>very</b> experimental. Random errors will definitely occur.
+                    Proceed with caution. 
+                </li>
+                <li>
                     Gitbao is slow. Gitbao hosts applications on 
                     <a href="https://aws.amazon.com/lambda/">
                         AWS Lambda
                     </a>. 
-                    This means it's very cheap but there is 
+                    This means it's very inexpensive but there is 
                     sometimes a 300ms+ additional delay for every
-                    requst. It's not meant to replace your whole web
-                    stack, but it could be very useful for small dynamic
-                    services that can afford to be a little sluggish. 
+                    request. 
                 </li>
                 <li>
                     Gitbao only supports Go. We're hoping to add more
@@ -55,9 +60,6 @@
                     Gitbao is free, for now. It's very cheap to run, 
                     when that changes we'll likely change to a "charge
                      for use" model.
-                </li>
-                <li>
-                    Gitbao is very experimental
                 </li>
                 <li>
                     More questions? Gitbao was created by <a href="mailto:m@xmcd.me">Max</a>,

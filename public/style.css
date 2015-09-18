@@ -33,6 +33,15 @@ a:hover {
 .nav li a {
     text-decoration: none;
 }
+
+.landing-head {
+    padding-bottom: 20px;
+}
+
+blockquote {
+    font-style: italic;
+}
+
 .landing img {
     padding-top: 20px;
 }
