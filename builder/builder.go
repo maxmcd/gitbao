@@ -87,7 +87,7 @@ func Build(gistId, cfg string, l logger.Log) (err error, name string) {
 		return
 	}
 	l.Write("Bao successfully published at:")
-	l.Write("%s", id.String())
+	l.Write("%s.gitbao.com", id.Hex())
 
 	l.Write("cleaning up")
 	err = os.RemoveAll(directory)

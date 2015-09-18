@@ -28,8 +28,10 @@ func init() {
 func CreateBao(gistId, functionName string) (id bson.ObjectId, err error) {
 	id = bson.NewObjectId()
 	bao := Bao{
-		Ts: time.Now(),
-		ID: id,
+		Ts:           time.Now(),
+		ID:           id,
+		FunctionName: functionName,
+		GistId:       gistId,
 	}
 	err = bc.Insert(bao)
 	return
@@ -37,6 +39,14 @@ func CreateBao(gistId, functionName string) (id bson.ObjectId, err error) {
 
 func GetAllBaos() (baos []Bao) {
 	err := bc.Find(nil).All(&baos)
-	log.Fatal(err)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return
+}
+
+func GetBaoById(id string) (bao Bao, err error) {
+	objId := bson.ObjectIdHex(id)
+	err = bc.Find(bson.M{"_id": objId}).One(&bao)
 	return
 }
