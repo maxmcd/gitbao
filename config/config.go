@@ -60,8 +60,22 @@ func Parse(config string) (response Config, err error) {
 		}
 		if envVar == true {
 			matches := envVarRegex.FindStringSubmatch(line)
+
+			key := matches[1]
+			val := matches[2]
+
+			key = strings.TrimFunc(key, func(r rune) bool {
+				return r == '"' || r == '\''
+			})
+			val = strings.TrimFunc(val, func(r rune) bool {
+				return r == '"' || r == '\''
+			})
+
+			key = strings.Replace(key, "'", `\'`, -1)
+			val = strings.Replace(val, "'", `\'`, -1)
+
 			if len(matches) > 1 {
-				response.EnvVar[matches[1]] = matches[2]
+				response.EnvVar[key] = val
 			}
 		}
 	}
