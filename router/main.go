@@ -7,9 +7,11 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/lambda"
+	"github.com/maxmcd/gitbao/model"
 )
 
 type Args struct {
@@ -26,12 +28,42 @@ type Response struct {
 	StatusCode int
 }
 
+var destinations map[string]string
+
+func init() {
+	populateDestinations()
+}
+
+func populateDestinations() {
+	baos := model.GetAllBaos()
+	destinations = make(map[string]string)
+	for _, bao := range baos {
+		destinations[bao.ID.String()] = bao.FunctionName
+	}
+}
+
 func main() {
 	http.ListenAndServe(":8001", http.HandlerFunc(handler))
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Request")
+
+	host := r.Host
+	host_parts := strings.Split(host, ".")
+
+	var subdomain string
+	var functionName string
+
+	if len(host_parts) == 3 {
+		subdomain = host_parts[0]
+		functionName = destinations[subdomain]
+	}
+
+	if functionName == "" {
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte(host + " not found"))
+	}
+
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Fatal(err)
@@ -55,9 +87,8 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	name := "forBuild410480062"
 
-	err, payload := InvoteLambda(name, reqeust)
+	err, payload := InvoteLambda(functionName, reqeust)
 	if err != nil {
 		log.Fatal(err)
 	}

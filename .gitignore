@@ -1,8 +1,7 @@
 bao*
 binbao*
 .DS_Store
-userapp/userapp
-lambda-relay/lambda-relay
+router/router
 gitbao
 node_modules
 tmp

@@ -74,6 +74,8 @@ func GistHandler(w http.ResponseWriter, req *http.Request) {
 
 func BuildHandler(w http.ResponseWriter, req *http.Request) {
 
+	w.Header().Set("Content-type", "text/html")
+
 	vars := mux.Vars(req)
 
 	gistId := vars["gist-id"]
@@ -88,8 +90,6 @@ func BuildHandler(w http.ResponseWriter, req *http.Request) {
 
 	wlog := logger.CreateLog(w)
 	wlog.Write("New bao: %s", gistId)
-
-	w.Header().Set("Content-type", "text/html")
 
 	err, name := builder.Build(gistId, cfg, wlog)
 	if err != nil {

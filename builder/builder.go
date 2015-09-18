@@ -14,8 +14,10 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/lambda"
+
 	"github.com/maxmcd/gitbao/config"
 	"github.com/maxmcd/gitbao/logger"
+	"github.com/maxmcd/gitbao/model"
 )
 
 var github_access_key string
@@ -43,8 +45,19 @@ func Build(gistId, cfg string, l logger.Log) (err error, name string) {
 	fileCount := len(gist.Files)
 	l.Write("%d files found:", fileCount)
 
+	var hasGoFiles bool
+
 	for _, file := range gist.Files {
+		filenameParts := strings.Split(file.Filename, ".")
+		if filenameParts[len(filenameParts)-1] == "go" {
+			hasGoFiles = true
+		}
 		l.Write("&nbsp;&nbsp;- %s", file.Filename)
+	}
+
+	if hasGoFiles != true {
+		l.Write("No Go files found in this gist. Exiting.")
+		return
 	}
 
 	l.Write("Downloading gist contents for build")
@@ -63,11 +76,35 @@ func Build(gistId, cfg string, l logger.Log) (err error, name string) {
 		return
 	}
 
-	// l.Write("Uploading packaged contents")
-	// err = CreateLambda(directory)
-	// if err != nil {
-	// 	return
-	// }
+	l.Write("Uploading packaged contents")
+	err = CreateLambda(directory)
+	if err != nil {
+		return
+	}
+
+	id, err := model.CreateBao(gistId, directory)
+	if err != nil {
+		return
+	}
+	l.Write("Bao successfully published at:")
+	l.Write("%s", id.String())
+
+	l.Write("cleaning up")
+	err = os.RemoveAll(directory)
+	if err != nil {
+		return
+	}
+	err = os.Remove("bin" + directory)
+	if err != nil {
+		return
+	}
+	err = os.Remove(directory + ".zip")
+	if err != nil {
+		return
+	}
+
+	fmt.Println(err)
+
 	return
 }
 
@@ -81,10 +118,7 @@ func CreateLambda(directory string) error {
 	svc := lambda.New(&aws.Config{Region: aws.String("us-east-1")})
 
 	params := &lambda.CreateFunctionInput{
-		Code: &lambda.FunctionCode{ // Required
-			// S3Bucket:        aws.String("gitbao"),
-			// S3Key:           aws.String(directory + ".zip"),
-			// S3ObjectVersion: aws.String("1"),
+		Code: &lambda.FunctionCode{
 			ZipFile: zipBytes,
 		},
 		FunctionName: aws.String(directory),                                               // Required
@@ -103,36 +137,6 @@ func CreateLambda(directory string) error {
 	return nil
 }
 
-// func UploadZip(directory string) error {
-// 	zipBytes, err := ioutil.ReadFile(directory + ".zip")
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	svc := s3.New(&aws.Config{Region: aws.String("us-east-1")})
-
-// 	params := &s3.PutObjectInput{
-// 		Bucket: aws.String("gitbao"),           // Required
-// 		Key:    aws.String(directory + ".zip"), // Required
-// 		Body:   bytes.NewReader(zipBytes),
-// 		// Metadata: map[string]*string{
-// 		// 	"Key": aws.String("MetadataValue"), // Required
-// 		// 	// More values...
-// 		// },
-// 	}
-// 	fmt.Println(params)
-
-// 	resp, err := svc.PutObject(params)
-// 	fmt.Println(resp)
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	// Pretty-print the response data.
-// 	fmt.Println(resp)
-// 	return nil
-// }
-
 func CreateZip(gist GithubGist, cfg config.Config, directory string) error {
 
 	buf := new(bytes.Buffer)
@@ -143,11 +147,6 @@ func CreateZip(gist GithubGist, cfg config.Config, directory string) error {
 	if err != nil {
 		return err
 	}
-
-	// err = addFileToZip(w, "lambda-relay/lambda-relay", "")
-	// if err != nil {
-	// 	return err
-	// }
 
 	err = addHandlerToZip(w, cfg)
 	if err != nil {
