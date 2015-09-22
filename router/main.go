@@ -7,12 +7,15 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 
 	"gopkg.in/mgo.v2/bson"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/lambda"
+
+	"github.com/maxmcd/gitbao/apache"
 	"github.com/maxmcd/gitbao/model"
 )
 
@@ -45,7 +48,18 @@ func populateDestinations() {
 }
 
 func main() {
-	log.Fatal(http.ListenAndServe(":8001", http.HandlerFunc(handler)))
+	loggingHandler := apache.NewApacheLoggingHandler(http.HandlerFunc(handler), os.Stderr)
+	server := &http.Server{
+		Addr:    ":8001",
+		Handler: loggingHandler,
+	}
+	log.Fatal(server.ListenAndServe())
+}
+
+func handlerError(err error, w http.ResponseWriter) {
+	w.WriteHeader(http.StatusInternalServerError)
+	w.Write([]byte(err.Error()))
+	return
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
@@ -85,7 +99,8 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		log.Fatal(err)
+		handlerError(err, w)
+		return
 	}
 	var args Args
 
@@ -98,24 +113,29 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	newHeaders["Host"] = r.Host
+
 	args.Headers = newHeaders
 	args.Method = r.Method
 	args.Path = r.URL.RequestURI()
 
 	reqeust, err := json.Marshal(args)
 	if err != nil {
-		log.Fatal(err)
+		handlerError(err, w)
+		return
 	}
 
 	err, payload := InvoteLambda(functionName, reqeust)
 	if err != nil {
-		log.Fatal(err)
+		handlerError(err, w)
+		return
 	}
 
 	var response Response
 	err = json.Unmarshal(payload, &response)
 	if err != nil {
-		log.Fatal(err)
+		handlerError(err, w)
+		return
 	}
 
 	for key, value := range response.Headers {
@@ -126,7 +146,8 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(response)
 	data, err := base64.StdEncoding.DecodeString(response.Body)
 	if err != nil {
-		log.Fatal(err)
+		handlerError(err, w)
+		return
 	}
 	w.WriteHeader(response.StatusCode)
 	w.Write(data)

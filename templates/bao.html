@@ -1,46 +1,63 @@
 {{template "header"}}
+<script src="/highlight.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<link rel="stylesheet" href="/solarized_light.css">
 <div class="container">
     <div class="row">
         <div class="columns twelve">
             <br>
             <h5 class="title">
-                    <a href="https://gist.github.com/{{.Owner.Login}}">
-                        {{.Owner.Login}}</a>
+                    <a href="https://gist.github.com/{{.Gist.Owner.Login}}">
+                        {{.Gist.Owner.Login}}</a>
                      / 
-                    <a href="{{.HTMLURL}}">
-                        {{.Description}}
+                    <a href="{{.Gist.HTMLURL}}">
+                        {{.Name}} 
                     </a>
                 </h5>
             <hr>
             <div class="row">
-                <div class="columns six">
+                <div class="columns six console-container">
                     <iFrame src="" name="console" frameborder="0" class="console"></iFrame>
-                    <b>Url:</b> <a href="{{.HTMLURL}}">{{.HTMLURL}}</a>
+                    <b>Url:</b> <a href="{{.Gist.HTMLURL}}">{{.Gist.HTMLURL}}</a>
                     <br>
-                    <b>Owner:</b> {{.Owner.Login}}
+                    <b>Owner:</b> {{.Gist.Owner.Login}}
                     <br>
-                    <b>Files:</b>
-                    <ul>
-                        {{range $index, $element := .Files}}
-                        <li>
-                            {{$index}}
-                        </li>
-                        {{end}}
-                    </ul>
                 </div>
                 <div class="columns six">
-                    <form target="console" action="/build/{{.ID}}" method="post" class="deploy">
-                        <input class="button-primary" type="submit" value="Deploy">
+                    <div class="setup">
+                        <form target="console" action="/build/{{.Gist.ID}}" method="post" class="deploy">
+                            <input class="button-primary" type="submit" value="Deploy">
+                            <p>
+                                Set a port in the bao config file that your application will broadcast on.
+                            </p>
+                            <textarea name="config" class="config">
+                                # This is your bao config file, define 
+                                # a port and any env variables 
+                                PORT 8080 
+                                THIS=that
+                            </textarea>
+                        </form>                        
+                    </div>
+                    <div class="complete">
                         <p>
-                            Set a port in the bao config file that your application will broadcast on.
+                            Build complete! Bao has been deployed at
+                            <a href="#" class="textlink"></a>                            
                         </p>
-                        <textarea name="config" class="config">
-                            # This is your bao config file, define 
-                            # a port and any env variables 
-                            PORT 8080 
-                            THIS=that
-                        </textarea>
-                    </form>
+                        <a href="#" class="button button-primary">View Bao</a>
+                    </div>
+                </div>
+            </div>
+            <hr>
+            <div class="row">
+                <div class="columns twelve">
+                    <h5>Files:</h5>
+                    {{$files := .Gist.Files}}
+                    {{range $index := .Filenames}}
+                        <div>
+                            <b>{{$index}}</b><br>
+                            <pre><code class="{{(index $files $index).Language}}">{{html (index $files $index).Content}}</code></pre>                            
+                        </div>
+                    {{end}}
                 </div>
             </div>
         </div>

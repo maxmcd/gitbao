@@ -49,6 +49,10 @@ blockquote {
     font-size: 17px;
 }
 
+.complete {
+    display: none;
+}
+
 iframe.console {
     background-color: #333;  
     min-height: 250px;
