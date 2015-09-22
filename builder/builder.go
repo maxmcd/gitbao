@@ -174,6 +174,21 @@ func addFileToZip(w *zip.Writer, path string, newname string) error {
 	return nil
 }
 
+func (b *Build) DownloadDependencies() error {
+	cmd := exec.Command("go", "get", "-d", "./...")
+	byteOut, err := cmd.CombinedOutput()
+	if len(byteOut) > 0 {
+		b.Log.Write("There was an error building this Go application:")
+		output := string(byteOut)
+		b.Log.Write(output)
+		return fmt.Errorf("error building")
+	}
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (b *Build) GoBuild() error {
 
 	arguments := []string{"build", "-o", "bin" + b.Directory}

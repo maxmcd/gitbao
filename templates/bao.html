@@ -30,12 +30,17 @@
                             <p>
                                 Set a port in the bao config file that your application will broadcast on.
                             </p>
+
+                            {{if .Config}}
+                            <textarea name="config" class="config">{{html .Config}}</textarea>
+                            {{else}}
                             <textarea name="config" class="config">
                                 # This is your bao config file, define 
                                 # a port and any env variables 
                                 PORT 8080 
                                 THIS=that
                             </textarea>
+                            {{end}}
                         </form>                        
                     </div>
                     <div class="complete">

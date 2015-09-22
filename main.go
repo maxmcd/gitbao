@@ -32,6 +32,7 @@ func init() {
 type GistResponse struct {
 	Gist      builder.GithubGist
 	Name      string
+	Config    string
 	Filenames []string
 }
 
@@ -85,9 +86,15 @@ func GistHandler(w http.ResponseWriter, req *http.Request) {
 		w.Write([]byte(err.Error()))
 	}
 
+	var baofileConfig string
 	fileList := make([]string, len(build.Gist.Files))
 	i := 0
-	for k, _ := range build.Gist.Files {
+	for k, file := range build.Gist.Files {
+		fmt.Println(file.Filename)
+		if file.Filename == "Baofile" {
+			baofileConfig = file.Content
+		}
+
 		fileList[i] = k
 		i++
 	}
@@ -106,6 +113,7 @@ func GistHandler(w http.ResponseWriter, req *http.Request) {
 		Name:      name,
 		Filenames: fileList,
 		Gist:      build.Gist,
+		Config:    baofileConfig,
 	}
 	RenderTemplate(w, "bao", response)
 }
@@ -155,6 +163,12 @@ func buildHandler(gistId, cfg string, l logger.Log) (err error) {
 	err = build.DownloadFromRepo()
 	l.Write("Files downloaded in directory: %s", build.Directory)
 
+	l.Write("Downloading Dependencies")
+	err = build.DownloadDependencies()
+	if err != nil {
+		return
+	}
+	l.Write("Building")
 	err = build.GoBuild()
 	if err != nil {
 		return
