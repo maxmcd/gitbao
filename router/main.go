@@ -125,14 +125,14 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err, payload := InvoteLambda(functionName, reqeust)
+	lambdaResponse, err := InvokeLambda(functionName, reqeust)
 	if err != nil {
 		handlerError(err, w)
 		return
 	}
 
 	var response Response
-	err = json.Unmarshal(payload, &response)
+	err = json.Unmarshal(lambdaResponse.Payload, &response)
 	if err != nil {
 		handlerError(err, w)
 		return
@@ -142,6 +142,18 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		w.Header().Del(key)
 		w.Header().Add(key, value)
 	}
+
+	base64logs := fmt.Sprintf("%s", *lambdaResponse.LogResult)
+	logdata, err := base64.StdEncoding.DecodeString(base64logs)
+
+	if len(response.Headers) == 0 {
+		// empty reponse
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("Empty response, maybe there was an error?\n\nAWS Log output:\n"))
+		w.Write(logdata)
+		return
+	}
+
 	fmt.Printf("%#v\n", w.Header())
 	fmt.Println(response)
 	data, err := base64.StdEncoding.DecodeString(response.Body)
@@ -153,18 +165,15 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	w.Write(data)
 }
 
-func InvoteLambda(name string, payload []byte) (err error, response []byte) {
+func InvokeLambda(name string, payload []byte) (response *lambda.InvokeOutput, err error) {
 	svc := lambda.New(&aws.Config{Region: aws.String("us-east-1")})
 
 	params := &lambda.InvokeInput{
 		FunctionName: aws.String(name), // Required
 		// ClientContext:  aws.String("String"),
-		// InvocationType: aws.String("InvocationType"),
-		// LogType:        aws.String("LogType"),
-		Payload: payload,
+		InvocationType: aws.String("RequestResponse"),
+		LogType:        aws.String("Tail"),
+		Payload:        payload,
 	}
-	resp, err := svc.Invoke(params)
-	response = resp.Payload
-
-	return
+	return svc.Invoke(params)
 }

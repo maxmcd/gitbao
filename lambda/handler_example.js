@@ -58,7 +58,7 @@ exports.handler = function(event, context) {
             console.log("Req, err: ", e)
             setTimeout(function() {
                 tryUntilSuccess(options, callback);
-            }, 1000)
+            }, 10)
         });
     }
 
