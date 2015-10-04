@@ -16,7 +16,7 @@ exports.handler = function(event, context) {
     });
 
     proc.on('error', function(code) {
-        console.log("proc, err: ", code)
+        console.log("Process err: ", code)
     })
 
     proc.on('close', function(code) {

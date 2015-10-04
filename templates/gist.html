@@ -1,0 +1,71 @@
+{{template "header"}}
+<script src="/highlight.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<link rel="stylesheet" href="/solarized_light.css">
+<div class="container">
+    <div class="row">
+        <div class="columns twelve">
+            <br>
+            <h5 class="title">
+                    <a href="https://gist.github.com/{{.Gist.Owner.Login}}">
+                        {{.Gist.Owner.Login}}</a>
+                     / 
+                    <a href="{{.Gist.HTMLURL}}">
+                        {{.Name}} 
+                    </a>
+                </h5>
+            <hr>
+            <div class="row">
+                <div class="columns six console-container">
+                    <iFrame src="" name="console" frameborder="0" class="console"></iFrame>
+                    <b>Url:</b> <a href="{{.Gist.HTMLURL}}">{{.Gist.HTMLURL}}</a>
+                    <br>
+                    <b>Owner:</b> {{.Gist.Owner.Login}}
+                    <br>
+                </div>
+                <div class="columns six">
+                    <div class="setup">
+                        <form target="console" action="/build/{{.Gist.ID}}" method="post" class="deploy">
+                            <input class="button-primary" type="submit" value="Deploy">
+                            <p>
+                                Set a port in the bao config file that your application will broadcast on.
+                            </p>
+
+                            {{if .Baofile}}
+                            <textarea name="baofile" class="baofile">{{html .Baofile}}</textarea>
+                            {{else}}
+                            <textarea name="baofile" class="baofile">
+                                # This is your bao config file, define 
+                                # a port and any env variables 
+                                PORT {{if .Port}}{{.Port}}{{else}}8080{{end}} 
+                                THIS=that
+                            </textarea>
+                            {{end}}
+                        </form>                        
+                    </div>
+                    <div class="complete">
+                        <p>
+                            Build complete! Bao has been deployed at
+                            <a href="#" class="textlink"></a>                            
+                        </p>
+                        <a href="#" class="button button-primary">View Bao</a>
+                    </div>
+                </div>
+            </div>
+            <hr>
+            <div class="row">
+                <div class="columns twelve">
+                    <h5>Files:</h5>
+                    {{$files := .Gist.Files}}
+                    {{range $index := .Filenames}}
+                        <div>
+                            <b>{{$index}}</b><br>
+                            <pre><code class="{{(index $files $index).Language}}">{{html (index $files $index).Content}}</code></pre>                            
+                        </div>
+                    {{end}}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{{template "footer"}}

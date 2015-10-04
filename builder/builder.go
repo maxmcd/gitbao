@@ -15,14 +15,14 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/lambda"
 
-	"github.com/maxmcd/gitbao/config"
+	"github.com/maxmcd/gitbao/baofile"
 	"github.com/maxmcd/gitbao/logger"
 )
 
 type Build struct {
 	Log       logger.Log
 	GistId    string
-	Config    config.Config
+	Baofile   baofile.Baofile
 	Gist      GithubGist
 	Directory string
 }
@@ -36,15 +36,15 @@ func init() {
 	}
 }
 
-func CreateBuild(gistId, configString string, l logger.Log) (build Build, err error) {
-	configStruct, err := config.Parse(configString)
+func CreateBuild(gistId, baofileString string, l logger.Log) (build Build, err error) {
+	bf, err := baofile.Parse(baofileString)
 	if err != nil {
 		return
 	}
 	build = Build{
-		Log:    l,
-		GistId: gistId,
-		Config: configStruct,
+		Log:     l,
+		GistId:  gistId,
+		Baofile: bf,
 	}
 	return
 }
@@ -89,7 +89,7 @@ func (b *Build) CreateZip() error {
 		return err
 	}
 
-	err = addHandlerToZip(w, b.Config)
+	err = addHandlerToZip(w, b.Baofile)
 	if err != nil {
 		return err
 	}
@@ -111,7 +111,7 @@ func (b *Build) CreateZip() error {
 	return nil
 }
 
-func addHandlerToZip(w *zip.Writer, cfg config.Config) error {
+func addHandlerToZip(w *zip.Writer, bf baofile.Baofile) error {
 	path := "lambda/handler_example.js"
 	f, err := os.Open(path)
 	if err != nil {
@@ -136,7 +136,7 @@ func addHandlerToZip(w *zip.Writer, cfg config.Config) error {
 
 	handlerTemplate := string(fileBytes)
 	t := template.Must(template.New("handler").Parse(handlerTemplate))
-	err = t.Execute(wr, cfg)
+	err = t.Execute(wr, bf)
 	if err != nil {
 		return err
 	}
@@ -221,10 +221,18 @@ func (b *Build) GoBuild() error {
 }
 
 func (b *Build) FetchGistData() (err error) {
+	b.Gist, err = FetchGistData(b.GistId)
+	if err != nil {
+		return
+	}
+	return
+}
+
+func FetchGistData(gistId string) (gist GithubGist, err error) {
 	client := &http.Client{}
 	req, err := http.NewRequest(
 		"GET",
-		"https://api.github.com/gists/"+b.GistId,
+		"https://api.github.com/gists/"+gistId,
 		nil,
 	)
 	if err != nil {
@@ -251,11 +259,7 @@ func (b *Build) FetchGistData() (err error) {
 	if err != nil {
 		return
 	}
-
-	err = json.Unmarshal(contents, &b.Gist)
-	if err != nil {
-		return
-	}
+	err = json.Unmarshal(contents, &gist)
 	return
 }
 

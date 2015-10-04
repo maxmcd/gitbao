@@ -77,7 +77,7 @@ hr {
 h5 {
     margin-bottom: 5px;
 }
-.config {
+.baofile {
     white-space: nowrap;
     background: #F1F1F1;
     line-height: 21.6px;
@@ -92,6 +92,6 @@ h5 {
 button:disabled {
     opacity: 0.4;
 }
-.config:focus {
+.baofile:focus {
     border: 1px solid #E1E1E1;
 }

@@ -9,10 +9,7 @@ $(function() {
     })
     window.addEventListener("message", function(event) {
         success = true
-        url = "http://" + event.data
-        $('.setup').hide()
-        $('.complete a').attr('href', url)
-        $('.complete .textlink').text(url)
-        $('.complete').show()
+        url = "/bao/" + event.data
+        window.location.href = url;
     }, false);
 })

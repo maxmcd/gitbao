@@ -149,7 +149,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	if len(response.Headers) == 0 {
 		// empty reponse
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Empty response, maybe there was an error?\n\nAWS Log output:\n"))
+		w.Write([]byte("Empty response, maybe there was an error?\n\nAWS Log output:\n\n"))
 		w.Write(logdata)
 		return
 	}

@@ -12,8 +12,12 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/maxmcd/gitbao/builder"
+	"github.com/maxmcd/gitbao/config"
 	"github.com/maxmcd/gitbao/logger"
 	"github.com/maxmcd/gitbao/model"
+
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/cloudwatch"
 )
 
 var T *template.Template
@@ -29,23 +33,22 @@ func init() {
 	T = template.Must(t, err)
 }
 
-type GistResponse struct {
-	Gist      builder.GithubGist
-	Name      string
-	Config    string
-	Filenames []string
-}
-
 func main() {
 	r := mux.NewRouter()
 	r.StrictSlash(true)
+
 	r.HandleFunc("/", IndexHandler).Methods("GET")
-	r.HandleFunc("/{username}/{gist-id}", GistHandler).Methods("GET")
 	r.HandleFunc("/build/{gist-id}", BuildHandler).Methods("POST")
-	//.Host("{subdomain:gist}.{host:.*}")
+	r.HandleFunc("/bao/{id}", BaoHandler).Methods("GET")
+	if config.C["env"] == "dev" {
+		r.HandleFunc("/{username}/{gist-id}", GistHandler).Methods("GET")
+	} else {
+		r.HandleFunc("/{username}/{gist-id}", GistHandler).Methods("GET").Host("{subdomain:gist}.{host:.*}")
+	}
 	r.PathPrefix("/").Handler(http.FileServer(http.Dir("public/")))
 	http.Handle("/", Middleware(r))
-	fmt.Println("Broadcasting Kitchen on port 8000")
+
+	fmt.Println("Broadcasting Gitbao on port 8000")
 	http.ListenAndServe(":8000", nil)
 }
 
@@ -71,28 +74,26 @@ func GistHandler(w http.ResponseWriter, req *http.Request) {
 	gistId := vars["gist-id"]
 	username := vars["username"]
 
+	port := req.FormValue("port")
+
 	if gistId == "" || username == "" {
-		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte("404"))
+		http.Error(w, "not found", 404)
 		return
 	}
 
-	build := builder.Build{
-		GistId: gistId,
-	}
-	err := build.FetchGistData()
+	gist, err := builder.FetchGistData(gistId)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
-	var baofileConfig string
-	fileList := make([]string, len(build.Gist.Files))
+	var bf string
+	fileList := make([]string, len(gist.Files))
 	i := 0
-	for k, file := range build.Gist.Files {
+	for k, file := range gist.Files {
 		fmt.Println(file.Filename)
 		if file.Filename == "Baofile" {
-			baofileConfig = file.Content
+			bf = file.Content
 		}
 
 		fileList[i] = k
@@ -101,21 +102,22 @@ func GistHandler(w http.ResponseWriter, req *http.Request) {
 	sort.Strings(fileList)
 
 	var name string
-	if build.Gist.Description == "" {
-		if len(build.Gist.Files) > 0 {
+	if gist.Description == "" {
+		if len(gist.Files) > 0 {
 			name = fileList[0]
 		}
 	} else {
-		name = build.Gist.Description
+		name = gist.Description
 	}
 
 	response := GistResponse{
 		Name:      name,
 		Filenames: fileList,
-		Gist:      build.Gist,
-		Config:    baofileConfig,
+		Gist:      gist,
+		Baofile:   bf,
+		Port:      port,
 	}
-	RenderTemplate(w, "bao", response)
+	RenderTemplate(w, "gist", response)
 }
 
 func BuildHandler(w http.ResponseWriter, req *http.Request) {
@@ -124,12 +126,11 @@ func BuildHandler(w http.ResponseWriter, req *http.Request) {
 	gistId := vars["gist-id"]
 
 	if gistId == "" {
-		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte("404"))
+		http.Error(w, "not found", 404)
 		return
 	}
 
-	cfg := req.FormValue("config")
+	cfg := req.FormValue("baofile")
 	l := logger.CreateLog(w)
 	err := buildHandler(gistId, cfg, l)
 	if err != nil {
@@ -203,11 +204,79 @@ func buildHandler(gistId, cfg string, l logger.Log) (err error) {
 	l.Write(`
 	<script type="text/javascript">
 		console.log(parent)
-		parent.postMessage("%s.gitbao.com", "*");
+		parent.postMessage("%s", "*");
 	</script>
 		`, id.Hex())
 
 	fmt.Println(err)
 
 	return
+}
+
+func BaoHandler(w http.ResponseWriter, req *http.Request) {
+	vars := mux.Vars(req)
+	baoId := vars["id"]
+	bao, err := model.GetBaoById(baoId)
+	if err != nil {
+		http.Error(w, "not found", 404)
+		return
+	}
+
+	gist, err := builder.FetchGistData(bao.GistId)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	svc := cloudwatch.New(&aws.Config{Region: aws.String("us-east-1")})
+
+	params := &cloudwatch.GetMetricStatisticsInput{
+		EndTime:    aws.Time(time.Now()),
+		MetricName: aws.String("Invocations"),
+		Namespace:  aws.String("AWS/Lambda"),
+		Period:     aws.Int64(480 * 8),
+		StartTime:  aws.Time(time.Now().Add(-time.Hour * 24 * 20)),
+		Statistics: []*string{
+			aws.String("Sum"),
+		},
+		Dimensions: []*cloudwatch.Dimension{
+			{
+				Name:  aws.String("FunctionName"),
+				Value: aws.String(bao.FunctionName),
+			},
+		},
+		Unit: aws.String("Count"),
+	}
+	resp, err := svc.GetMetricStatistics(params)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+	}
+	fmt.Println(err)
+
+	response := BaoResponse{
+		Id:          baoId,
+		Gist:        gist,
+		Bao:         bao,
+		Stats:       resp.String(),
+		Root:        config.C["root"],
+		DateCreated: bao.Ts.Format("3:04pm Jan 2, 2006"),
+	}
+	RenderTemplate(w, "bao", response)
+}
+
+type GistResponse struct {
+	Gist      builder.GithubGist
+	Name      string
+	Baofile   string
+	Filenames []string
+	Port      string
+}
+
+type BaoResponse struct {
+	Id          string
+	Gist        builder.GithubGist
+	Bao         model.Bao
+	Root        string
+	Stats       string
+	DateCreated string
 }

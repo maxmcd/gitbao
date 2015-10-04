@@ -1,6 +1,7 @@
 package model
 
 import (
+	"fmt"
 	"log"
 	"time"
 
@@ -46,7 +47,12 @@ func GetAllBaos() (baos []Bao) {
 }
 
 func GetBaoById(id string) (bao Bao, err error) {
-	objId := bson.ObjectIdHex(id)
-	err = bc.Find(bson.M{"_id": objId}).One(&bao)
+	isId := bson.IsObjectIdHex(id)
+	if isId == true {
+		objId := bson.ObjectIdHex(id)
+		err = bc.Find(bson.M{"_id": objId}).One(&bao)
+		return
+	}
+	err = fmt.Errorf("Mongo hex id not valid")
 	return
 }
