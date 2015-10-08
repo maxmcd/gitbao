@@ -11,6 +11,8 @@ import (
 
 	"github.com/gorilla/mux"
 
+	"github.com/maxmcd/baodata"
+
 	"github.com/maxmcd/gitbao/builder"
 	"github.com/maxmcd/gitbao/config"
 	"github.com/maxmcd/gitbao/logger"
@@ -37,6 +39,7 @@ func main() {
 	r := mux.NewRouter()
 	r.StrictSlash(true)
 
+	// core application
 	r.HandleFunc("/", IndexHandler).Methods("GET")
 	r.HandleFunc("/build/{gist-id}", BuildHandler).Methods("POST")
 	r.HandleFunc("/bao/{id}", BaoHandler).Methods("GET")
@@ -45,11 +48,20 @@ func main() {
 	} else {
 		r.HandleFunc("/{username}/{gist-id}", GistHandler).Methods("GET").Host("{subdomain:gist}.{host:.*}")
 	}
+
+	// baodata
+	baodata.SecretHandler(func(baoId string, secret string) (isValid bool, err error) {
+		return model.ConfirmSecret(baoId, secret)
+	})
+	baodata.Connect()
+	r.HandleFunc("/ds/", baodata.Handler)
+
+	// static files and middleware
 	r.PathPrefix("/").Handler(http.FileServer(http.Dir("public/")))
 	http.Handle("/", Middleware(r))
 
 	fmt.Println("Broadcasting Gitbao on port 8000")
-	http.ListenAndServe(":8000", nil)
+	log.Fatal(http.ListenAndServe(":8000", nil))
 }
 
 func Middleware(h http.Handler) http.Handler {
@@ -164,6 +176,11 @@ func buildHandler(gistId, cfg string, l logger.Log) (err error) {
 	err = build.DownloadFromRepo()
 	l.Write("Files downloaded in directory: %s", build.Directory)
 
+	bao, err := model.CreateBao(build.GistId, build.Directory)
+	if err != nil {
+		return
+	}
+
 	l.Write("Downloading Dependencies")
 	err = build.DownloadDependencies()
 	if err != nil {
@@ -177,7 +194,7 @@ func buildHandler(gistId, cfg string, l logger.Log) (err error) {
 	l.Write("Build successful")
 
 	l.Write("Zipping contents")
-	err = build.CreateZip()
+	err = build.CreateZip(bao)
 	if err != nil {
 		return
 	}
@@ -188,25 +205,21 @@ func buildHandler(gistId, cfg string, l logger.Log) (err error) {
 		return
 	}
 
-	id, err := model.CreateBao(build.GistId, build.Directory)
-	if err != nil {
-		return
-	}
 	l.Write("Bao successfully published at:")
-	l.Write("%s.gitbao.com", id.Hex())
+	l.Write("%s.gitbao.com", bao.ID.Hex())
 
 	l.Write("cleaning up")
-	err = build.CleanUp()
-	if err != nil {
-		return
-	}
+	// err = build.CleanUp()
+	// if err != nil {
+	// 	return
+	// }
 
 	l.Write(`
 	<script type="text/javascript">
 		console.log(parent)
 		parent.postMessage("%s", "*");
 	</script>
-		`, id.Hex())
+		`, bao.ID.Hex())
 
 	fmt.Println(err)
 

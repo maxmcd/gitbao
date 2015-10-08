@@ -17,6 +17,7 @@ import (
 
 	"github.com/maxmcd/gitbao/baofile"
 	"github.com/maxmcd/gitbao/logger"
+	"github.com/maxmcd/gitbao/model"
 )
 
 type Build struct {
@@ -78,7 +79,7 @@ func (b *Build) CreateLambda() error {
 	return nil
 }
 
-func (b *Build) CreateZip() error {
+func (b *Build) CreateZip(bao model.Bao) error {
 
 	buf := new(bytes.Buffer)
 	w := zip.NewWriter(buf)
@@ -88,6 +89,9 @@ func (b *Build) CreateZip() error {
 	if err != nil {
 		return err
 	}
+
+	b.Baofile.EnvVar["_B_secret"] = bao.Secret
+	b.Baofile.EnvVar["_B_baoId"] = bao.ID.Hex()
 
 	err = addHandlerToZip(w, b.Baofile)
 	if err != nil {

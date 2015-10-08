@@ -76,14 +76,19 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		functionName = destinations[subdomain]
 	}
 
+	if subdomain == "test" {
+		http.Error(w, "all ok", http.StatusOK)
+		return
+	}
+
 	if functionName == "" && subdomain != "" {
 		fmt.Printf("checking for %s in the db\n", subdomain)
 		isValidHex := bson.IsObjectIdHex(subdomain)
 		if isValidHex == true {
 			bao, err := model.GetBaoById(subdomain)
 			if err != nil {
-				w.WriteHeader(http.StatusBadRequest)
-				w.Write([]byte(err.Error()))
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
 			}
 			fmt.Println(bao)
 			destinations[bao.ID.Hex()] = bao.FunctionName
@@ -92,8 +97,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if functionName == "" {
-		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte(host + " not found"))
+		http.Error(w, host+" not found", http.StatusNotFound)
 		return
 	}
 
