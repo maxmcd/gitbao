@@ -42,11 +42,16 @@ blockquote {
     font-style: italic;
 }
 
-.landing img {
+.landing .landing-head img {
     padding-top: 20px;
 }
+
 .landing {
     font-size: 17px;
+}
+
+.landing img.tut {
+    max-width: 100%;
 }
 
 .complete {

@@ -1,9 +1,11 @@
 package main
 
 import (
+	"encoding/base64"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"sort"
 	"strings"
 	"text/template"
@@ -41,6 +43,7 @@ func main() {
 
 	// core application
 	r.HandleFunc("/", IndexHandler).Methods("GET")
+	r.HandleFunc("/admin/", AdminHandler).Methods("GET")
 	r.HandleFunc("/build/{gist-id}", BuildHandler).Methods("POST")
 	r.HandleFunc("/bao/{id}", BaoHandler).Methods("GET")
 	if config.C["env"] == "dev" {
@@ -275,6 +278,63 @@ func BaoHandler(w http.ResponseWriter, req *http.Request) {
 		DateCreated: bao.Ts.Format("3:04pm Jan 2, 2006"),
 	}
 	RenderTemplate(w, "bao", response)
+}
+
+func AdminHandler(w http.ResponseWriter, r *http.Request) {
+	username := "admin"
+	password := os.Getenv("AdminPassword")
+
+	authError := func() {
+		w.Header().Set("WWW-Authenticate", "Basic realm=\"Zork\"")
+		http.Error(w, "authorization failed", http.StatusUnauthorized)
+	}
+
+	if password == "" {
+		authError()
+		return
+	}
+
+	auth := strings.SplitN(r.Header.Get("Authorization"), " ", 2)
+	if len(auth) != 2 || auth[0] != "Basic" {
+		authError()
+		return
+	}
+
+	payload, err := base64.StdEncoding.DecodeString(auth[1])
+	if err != nil {
+		authError()
+		return
+	}
+
+	pair := strings.SplitN(string(payload), ":", 2)
+	if len(pair) != 2 || !(pair[0] == username && pair[1] == password) {
+		authError()
+		return
+	}
+
+	baos := model.GetAllBaos()
+
+	// reverse
+	for i, j := 0, len(baos)-1; i < j; i, j = i+1, j-1 {
+		baos[i], baos[j] = baos[j], baos[i]
+	}
+
+	var adminResponse []AdminResponse
+	for _, bao := range baos {
+		adminResponse = append(adminResponse, AdminResponse{
+			Bao:         bao,
+			HexId:       bao.ID.Hex(),
+			DateCreated: bao.Ts.Format("3:04pm Jan 2, 2006"),
+		})
+	}
+
+	RenderTemplate(w, "admin", adminResponse)
+}
+
+type AdminResponse struct {
+	Bao         model.Bao
+	HexId       string
+	DateCreated string
 }
 
 type GistResponse struct {

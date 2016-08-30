@@ -1,0 +1,36 @@
+{{template "header"}}
+<div class="container">
+    <div class="row">
+        <div class="columns twelve">
+            <h1>Baos</h1>
+            <table class="u-full-width">
+                <tbody>
+                    <tr>
+                        <th>Server Root</th>
+                        <th>Bao Page</th>
+                        <th>GistId</th>
+                        <th>Date Created</th>
+                    </tr>
+                    {{range .}}
+                        <tr>
+                            <td>
+                                <a href="http://{{.HexId}}.gitbao.com">{{.HexId}}.gitbao.com</a> 
+                            </td>
+                            <td>
+                                <a href="/bao/{{.HexId}}">/bao/{{.HexId}}</a> 
+                            </td>
+                            <td>
+                                <a href="https://gist.github.com/{{.Bao.GistId}}">{{.Bao.GistId}}</a>
+                            </td>
+                            <td>
+                                {{.DateCreated}}
+                            </td>
+                        </tr>
+                    {{end}}                    
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{{template "footer"}}
